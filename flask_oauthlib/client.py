@@ -105,11 +105,18 @@ def parse_response(resp, content, strict=False, content_type=None):
     """
     Parse the response returned by :meth:`OAuthRemoteApp.http_request`.
     """
-    if not content_type:
-        content_type = resp.headers.get('content-type', 'application/json')
-    ct, options = parse_options_header(content_type)
+    ct = resp.headers.get('content-type')
+    if not ct and content.lower().strip().startswith('callback('):
+        ct = 'application/json'
+    if not ct:
+        ct = content_type
+    if not ct:
+        ct = 'application/json'
+    ct, options = parse_options_header(ct)
 
     if ct in ('application/json', 'text/javascript'):
+        if content.lower().strip().startswith('callback('):
+            content = content.strip().replace('callback(', '', 1).strip("); ")
         return json.loads(content)
 
     if ct in ('application/xml', 'text/xml'):
